@@ -1,4 +1,4 @@
-module github.com/tshelter/goch9329
+module github.com/tshelter/ch9329
 
 go 1.23.0
 

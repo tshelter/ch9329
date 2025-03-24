@@ -32,13 +32,13 @@ type Configuration struct {
 	Data []byte
 }
 
-type baseCfg struct {
+type BaseCfg struct {
 	ser *serial.Port
 }
 
-func NewBaseCfg(ser *serial.Port) *baseCfg { return &baseCfg{ser: ser} }
+func NewBaseCfg(ser *serial.Port) *BaseCfg { return &BaseCfg{ser: ser} }
 
-func (b *baseCfg) setDeviceDescriptors(
+func (b *BaseCfg) setDeviceDescriptors(
 	descriptorType USBStringDescriptor,
 	description string,
 ) error {
@@ -47,8 +47,14 @@ func (b *baseCfg) setDeviceDescriptors(
 	}
 	descriptionBytes := []byte(description)
 	packet := append(CfgHead, CfgAddr, CmdGetUsbString, LenGetUsbString, byte(descriptorType))
-	b.ser.Write(packet)
-	b.ser.Read(make([]byte, 128))
+	_, err := b.ser.Write(packet)
+	if err != nil {
+		return err
+	}
+	_, err = b.ser.Read(make([]byte, 128))
+	if err != nil {
+		return err
+	}
 	descriptorLength := len(descriptionBytes)
 	if descriptorLength == 0 {
 		descriptorLength = 1
@@ -59,10 +65,16 @@ func (b *baseCfg) setDeviceDescriptors(
 		descriptionBytes...)
 	modifiedPacket := append(CfgHead, CfgAddr, CmdSetUsbString, byte(len(modifiedData)))
 	modifiedPacket = append(modifiedPacket, modifiedData...)
-	b.ser.Write(modifiedPacket)
+	_, err = b.ser.Write(modifiedPacket)
+	if err != nil {
+		return err
+	}
 
 	returnPacket := make([]byte, 7)
-	b.ser.Read(returnPacket)
+	_, err = b.ser.Read(returnPacket)
+	if err != nil {
+		return err
+	}
 	expectedPacket := []byte{0x57, 0xAB, 0x00, 0x8B, 0x01, 0x00, 0x8E}
 	if string(returnPacket) != string(expectedPacket) {
 		return errors.New("unexpected response from device")
@@ -70,7 +82,7 @@ func (b *baseCfg) setDeviceDescriptors(
 	return nil
 }
 
-func (b *baseCfg) getParameters() ([]byte, error) {
+func (b *BaseCfg) getParameters() ([]byte, error) {
 	packet := append(MouseHead, MouseAddr, CmdGetParaCfg, LenGetParaCfg)
 	if _, err := b.ser.Write(packet); err != nil {
 		return nil, err
@@ -83,7 +95,7 @@ func (b *baseCfg) getParameters() ([]byte, error) {
 	return buffer[:n], nil
 }
 
-func (b *baseCfg) getUSBString(descriptor USBStringDescriptor) (string, error) {
+func (b *BaseCfg) getUSBString(descriptor USBStringDescriptor) (string, error) {
 	if _, err := b.ser.Read(make([]byte, 128)); err != nil {
 		return "", err
 	}
@@ -101,19 +113,19 @@ func (b *baseCfg) getUSBString(descriptor USBStringDescriptor) (string, error) {
 	return string(buffer[7 : 7+length]), nil
 }
 
-func (b *baseCfg) getSerialNumber() (string, error) {
+func (b *BaseCfg) getSerialNumber() (string, error) {
 	return b.getUSBString(SerialNumber)
 }
 
-func (b *baseCfg) getManufacturer() (string, error) {
+func (b *BaseCfg) getManufacturer() (string, error) {
 	return b.getUSBString(Manufacturer)
 }
 
-func (b *baseCfg) getProduct() (string, error) {
+func (b *BaseCfg) getProduct() (string, error) {
 	return b.getUSBString(Product)
 }
 
-func (b *baseCfg) setDeviceIDs(vid, pid int, customDescriptor bool) error {
+func (b *BaseCfg) setDeviceIDs(vid, pid int, customDescriptor bool) error {
 	packet := append(MouseHead, MouseAddr, CmdGetParaCfg, LenGetParaCfg)
 	if _, err := b.ser.Write(packet); err != nil {
 		return err

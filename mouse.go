@@ -35,12 +35,12 @@ var (
 	LenRel    = byte(0x05)
 )
 
-type mouseSender struct {
+type MouseSender struct {
 	ser *serial.Port
 }
 
-func NewMouseSender(ser *serial.Port) *mouseSender {
-	return &mouseSender{ser: ser}
+func NewMouseSender(ser *serial.Port) *MouseSender {
+	return &MouseSender{ser: ser}
 }
 
 func wheelIntToBytes(wheelDelta int) (byte, error) {
@@ -53,7 +53,7 @@ func wheelIntToBytes(wheelDelta int) (byte, error) {
 	return byte(256 + wheelDelta), nil
 }
 
-func (ms *mouseSender) sendDataAbsolute(
+func (ms *MouseSender) sendDataAbsolute(
 	x, y int,
 	ctrl MouseCtrl,
 	xMax, yMax, wheelDelta int,
@@ -85,7 +85,7 @@ func (ms *mouseSender) sendDataAbsolute(
 	return nil
 }
 
-func (ms *mouseSender) sendDataRelative(x, y int, ctrl MouseCtrl, wheelDelta int) error {
+func (ms *MouseSender) sendDataRelative(x, y int, ctrl MouseCtrl, wheelDelta int) error {
 	data := []byte{0x01, ctrlToHexMapping[ctrl]}
 
 	b, err := wheelIntToBytes(wheelDelta)
@@ -103,7 +103,7 @@ func (ms *mouseSender) sendDataRelative(x, y int, ctrl MouseCtrl, wheelDelta int
 	return nil
 }
 
-func (ms *mouseSender) Move(x, y int, relative bool, monitorWidth, monitorHeight int) error {
+func (ms *MouseSender) Move(x, y int, relative bool, monitorWidth, monitorHeight int) error {
 	if relative {
 		if err := ms.sendDataRelative(x, y, CtrlNull, 0); err != nil {
 			return err
@@ -116,15 +116,15 @@ func (ms *mouseSender) Move(x, y int, relative bool, monitorWidth, monitorHeight
 	return nil
 }
 
-func (ms *mouseSender) Press(button MouseCtrl) error {
+func (ms *MouseSender) Press(button MouseCtrl) error {
 	return ms.sendDataRelative(0, 0, button, 0)
 }
 
-func (ms *mouseSender) Release() error {
+func (ms *MouseSender) Release() error {
 	return ms.sendDataRelative(0, 0, CtrlNull, 0)
 }
 
-func (ms *mouseSender) Click(button MouseCtrl) error {
+func (ms *MouseSender) Click(button MouseCtrl) error {
 	if err := ms.Press(button); err != nil {
 		return err
 	}
@@ -133,6 +133,6 @@ func (ms *mouseSender) Click(button MouseCtrl) error {
 	return ms.Release()
 }
 
-func (ms *mouseSender) Wheel(wheelDelta int) error {
+func (ms *MouseSender) Wheel(wheelDelta int) error {
 	return ms.sendDataRelative(0, 0, CtrlNull, wheelDelta)
 }
