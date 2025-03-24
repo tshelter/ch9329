@@ -1,4 +1,4 @@
-package ch
+package ch9329
 
 type hidKey struct {
 	Code  byte

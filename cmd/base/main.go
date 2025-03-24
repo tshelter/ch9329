@@ -6,7 +6,7 @@ import (
 
 	"github.com/tarm/serial"
 
-	ch "github.com/tshelter/goch9329/internal"
+	ch "github.com/tshelter/goch9329"
 )
 
 func main() {
