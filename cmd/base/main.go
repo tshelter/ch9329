@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
 	"github.com/tarm/serial"
+
 	ch "github.com/tshelter/goch9329/internal"
 )
 
@@ -16,19 +16,17 @@ func main() {
 		log.Fatal(err)
 	}
 	defer func(port *serial.Port) {
-		if err := port.Close(); err != nil {
+		err := port.Close()
+		if err != nil {
 			log.Fatal(err)
 		}
 	}(port)
 
 	keyboard := ch.NewKeyboardSender(port)
-	text := "echo 'Hello world'\n"
-	minInterval := 0.01
-	maxInterval := 0.03
+	mouse := ch.NewMouseSender(port)
+	baseCfg := ch.NewBaseCfg(port)
 
-	if err := keyboard.Write(text, minInterval, maxInterval); err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Typed 'Hello World!' successfully")
+	_ = keyboard
+	_ = mouse
+	_ = baseCfg
 }

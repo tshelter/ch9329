@@ -43,8 +43,12 @@ var (
 	Len  = []byte{0x08}
 )
 
-type Keyboard struct {
-	Ser serial.Port
+type keyboardSender struct {
+	ser *serial.Port
+}
+
+func NewKeyboardSender(ser *serial.Port) *keyboardSender {
+	return &keyboardSender{ser: ser}
 }
 
 func sumBytes(data []byte) int {
@@ -73,7 +77,7 @@ func getPacket(head, addr, cmd, length, data []byte) []byte {
 	return packet
 }
 
-func (k *Keyboard) Send(keys [6]string, modifs []string) error {
+func (k *keyboardSender) Send(keys [6]string, modifs []string) error {
 	var dat []byte
 	var modifB byte = 0x00
 	for _, m := range modifs {
@@ -92,11 +96,11 @@ func (k *Keyboard) Send(keys [6]string, modifs []string) error {
 		dat = append(dat, mapping.Code)
 	}
 	packet := getPacket(Head, Addr, Cmd, Len, dat)
-	_, err := k.Ser.Write(packet)
+	_, err := k.ser.Write(packet)
 	return err
 }
 
-func (k *Keyboard) Press(key string, modifs []string) error {
+func (k *keyboardSender) Press(key string, modifs []string) error {
 	mapping, ok := HIDKeyMap[key]
 	if !ok {
 		return fmt.Errorf("%w, key: %s", ErrInvalidKey, key)
@@ -112,12 +116,12 @@ func (k *Keyboard) Press(key string, modifs []string) error {
 	return k.Send(keys, modifs)
 }
 
-func (k *Keyboard) Release() error {
+func (k *keyboardSender) Release() error {
 	var keys [6]string
 	return k.Send(keys, nil)
 }
 
-func (k *Keyboard) PressAndRelease(
+func (k *keyboardSender) PressAndRelease(
 	key string,
 	modifs []string,
 	minInterval, maxInterval float64,
@@ -132,7 +136,7 @@ func (k *Keyboard) PressAndRelease(
 	return k.Release()
 }
 
-func (k *Keyboard) TriggerKeys(keys []string, modifiers []string) error {
+func (k *keyboardSender) TriggerKeys(keys []string, modifiers []string) error {
 	keySet := make(map[string]struct{})
 	for _, k := range keys {
 		keySet[k] = struct{}{}
@@ -180,7 +184,7 @@ func (k *Keyboard) TriggerKeys(keys []string, modifiers []string) error {
 	return k.Send(keysArray, uniqueModifiers)
 }
 
-func (k *Keyboard) Write(text string, minInterval, maxInterval float64) error {
+func (k *keyboardSender) Write(text string, minInterval, maxInterval float64) error {
 	for _, ch := range text {
 		if err := k.PressAndRelease(string(ch), nil, minInterval, maxInterval); err != nil {
 			return err
